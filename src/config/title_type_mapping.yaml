@@ -1,0 +1,10 @@
+{'movie': 'movie',
+           'tvSeries':'tv',
+           'tvMiniSeries':'tv',
+           'video':'tv', 
+           'short':'tv', 
+           'videoGame':'tv',
+           'tvMovie':'movie', 
+           'tvEpisode':'tv', 
+           'tvSpecial':'tv', 
+           'tvShort':'tv'}

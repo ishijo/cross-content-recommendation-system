@@ -1,0 +1,17 @@
+data/
+data/imdb/
+data/imdb/name.basics.tsv
+data/imdb/title.basics.tsv
+data/imdb/title.akas.tsv
+data/imdb/title.principals.tsv
+data/imdb/title.ratings.tsv
+
+# Large model files
+src/model.zip
+src/model/
+src/goodreads_preprocessed
+src/data/imdb_1l
+
+# Large notebooks (consider using nbstripout instead)
+# src/genres.ipynb
+
