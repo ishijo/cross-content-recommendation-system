@@ -1,17 +1,68 @@
-data/
-data/imdb/
-data/imdb/name.basics.tsv
-data/imdb/title.basics.tsv
-data/imdb/title.akas.tsv
-data/imdb/title.principals.tsv
-data/imdb/title.ratings.tsv
+# Data files (never commit data to git)
+data/raw/
+data/processed/
+data/embeddings/
+!data/processed/genre_mapping.json
+!data/processed/genre_mapping_summary.csv
 
-# Large model files
-src/model.zip
-src/model/
-src/goodreads_preprocessed
-src/data/imdb_1l
+# Model files (models downloaded via library, not stored in repo)
+models/
+*.bin
+*.pt
+*.pth
+*.h5
+*.pkl
+*.pickle
+*.npy
+*.faiss
 
-# Large notebooks (consider using nbstripout instead)
-# src/genres.ipynb
+# Large data files
+*.tsv
+*.csv
+!data/processed/genre_mapping_summary.csv
 
+# Logs
+logs/
+*.log
+
+# Virtual environment
+venv/
+env/
+.venv/
+
+# Python cache
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+.Python
+
+# Environment variables
+.env
+.env.local
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Jupyter
+.ipynb_checkpoints/
+*.ipynb_checkpoints
+
+# Logs
+*.log
+logs/
+
+# Claude history
+.claude-history/
+
+.claude-history/
+.CLAUDE.md
+CLAUDE.md

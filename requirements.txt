@@ -1,0 +1,82 @@
+# Core dependencies - pinned for reproducibility (early 2026)
+# Python 3.11+ recommended
+
+# Deep Learning & Transformers
+torch==2.2.2
+sentence-transformers==3.3.1
+transformers==4.47.1
+tokenizers==0.21.0
+
+# Scientific Computing
+numpy==1.26.4  # Downgraded for PyTorch 2.2.2 compatibility
+scipy==1.13.1  # Compatible with NumPy 1.x
+scikit-learn==1.5.2  # Compatible with NumPy 1.x
+
+# Data Processing
+pandas==2.2.3
+openpyxl==3.1.5  # Excel support for pandas
+
+# Vector Search
+faiss-cpu==1.9.0.post1
+
+# NLP Libraries
+nltk==3.9.1
+spacy==3.8.3
+# Run after install: python -m spacy download en_core_web_lg
+
+# Visualization
+matplotlib==3.9.4
+seaborn==0.13.2
+plotly==5.24.1
+missingno==0.5.2
+
+# Web Framework
+streamlit==1.41.1
+
+# API & HTTP
+anthropic==0.40.0
+requests==2.32.3
+httpx==0.28.1
+
+# AWS Integration (optional - loose versioning to avoid botocore conflicts)
+boto3>=1.35.0
+s3fs>=2024.6.0
+
+# Kaggle Integration (optional)
+kaggle==1.6.17
+
+# Progress Bars & CLI
+tqdm==4.67.1
+rich==13.9.4
+
+# Environment Management
+python-dotenv==1.0.1
+
+# Data Validation
+pydantic==2.10.5
+
+# Utilities
+pathlib2==2.3.7.post1  # For Python 3.11 compatibility
+typing-extensions==4.12.2
+
+# Testing (for future use)
+pytest==8.3.4
+pytest-cov==6.0.0
+
+# Code Quality (optional)
+black==24.10.0
+flake8==7.1.1
+mypy==1.14.0
+
+# Jupyter (for notebook work)
+jupyter==1.1.1
+ipykernel==6.29.5
+nbconvert==7.16.4
+
+# Async support
+asyncio==3.4.3
+aiohttp==3.11.11
+nest-asyncio==1.6.0
+
+# JSON & YAML
+pyyaml==6.0.2
