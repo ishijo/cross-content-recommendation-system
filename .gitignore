@@ -72,3 +72,11 @@ SPRINT*.txt
 *DEBUG_PLAN.md
 *_SUMMARY.txt
 *_PLAN.md
+
+# Development artifacts
+plots/
+reports/
+notebooks/
+*_evaluation.py
+*sprint*.py
+*sprint*.sh
