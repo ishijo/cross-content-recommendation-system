@@ -62,7 +62,13 @@ logs/
 
 # Claude history
 .claude-history/
-
-.claude-history/
 .CLAUDE.md
 CLAUDE.md
+
+# Project planning and debug files
+S3_SETUP.md
+SPRINT*.md
+SPRINT*.txt
+*DEBUG_PLAN.md
+*_SUMMARY.txt
+*_PLAN.md
