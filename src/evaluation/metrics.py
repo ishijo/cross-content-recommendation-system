@@ -15,7 +15,7 @@ from tqdm import tqdm
 
 # Add parent directory to path
 sys.path.append(str(Path(__file__).parent.parent))
-from project_config import PLOTS_DIR, PROCESSED_DATA_DIR
+from project_config import PLOTS_DIR, PROCESSED_DATA_DIR, BIDIRECTIONAL_EVAL_RESULTS
 from utils.helpers import setup_logger, timer, load_genre_mapping, get_mapped_movie_genres
 
 
@@ -280,6 +280,182 @@ def plot_evaluation_results(results: Dict, output_path: Path, logger=None):
     plt.close()
 
 
+def evaluate_bidirectional(
+    recommender,
+    sample_size: int = 200,
+    k: int = 10,
+    logger=None,
+) -> Dict:
+    """
+    Evaluate the recommender in both directions on random samples.
+
+    Samples `sample_size` books and `sample_size` movies/shows (seed=42),
+    then computes Precision@K and nDCG@K for each direction.
+
+    Relevance definitions:
+    - Book → Movie/Show:  movie is relevant if any of its genres overlap
+                          with the book's mapped movie-genre set.
+    - Movie/Show → Book:  book is relevant if any of its mapped movie-genres
+                          overlap with the movie's actual genres.
+
+    Args:
+        recommender: ContrastiveRecommender (load_data() already called)
+        sample_size: Number of books and movies to sample per direction
+        k: Top-K to evaluate
+        logger: Optional logger
+
+    Returns:
+        Dictionary with per-direction Precision@K and nDCG@K.
+        Also saves results to BIDIRECTIONAL_EVAL_RESULTS.
+    """
+    import ast
+
+    if logger:
+        logger.info("\n" + "="*70)
+        logger.info(f"BIDIRECTIONAL EVALUATION (n={sample_size}, k={k})")
+        logger.info("="*70)
+
+    genre_mapping = load_genre_mapping(logger)
+
+    rng = np.random.default_rng(42)
+
+    # ------------------------------------------------------------------ #
+    # Direction A: Book → Movies/Shows                                     #
+    # ------------------------------------------------------------------ #
+    book_sample = recommender.book_df.sample(
+        n=min(sample_size, len(recommender.book_df)),
+        random_state=42,
+    )
+
+    prec_b2m, ndcg_b2m = [], []
+
+    if logger:
+        logger.info(f"\n[Book → Movies/Shows] Evaluating {len(book_sample)} books…")
+
+    for book_id, book_row in tqdm(
+        book_sample.iterrows(), total=len(book_sample), desc="Book→Movie"
+    ):
+        try:
+            recs = recommender.recommend_movies(
+                book_row["Book"], k=k, genre_filter=True, use_projection=True
+            )
+            if len(recs) == 0:
+                continue
+
+            recommended_ids = recs["movie_id"].tolist()
+
+            book_movie_genres = get_mapped_movie_genres(book_row, genre_mapping)
+            if not book_movie_genres:
+                continue
+
+            # Relevant movies: share at least one genre with book's mapped genres
+            relevant_ids = set()
+            for mid, mrow in recommender.movie_df.iterrows():
+                mgenres = [g.strip() for g in str(mrow["genres"]).split(",")]
+                if any(g in mgenres for g in book_movie_genres):
+                    relevant_ids.add(mid)
+
+            prec_b2m.append(precision_at_k(recommended_ids, relevant_ids, k))
+            ndcg_b2m.append(ndcg_at_k(recommended_ids, relevant_ids, k))
+
+        except Exception as e:
+            if logger:
+                logger.warning(f"  Skipping book '{book_row.get('Book', book_id)}': {e}")
+
+    # ------------------------------------------------------------------ #
+    # Direction B: Movie/Show → Books                                      #
+    # ------------------------------------------------------------------ #
+    movie_sample = recommender.movie_df.sample(
+        n=min(sample_size, len(recommender.movie_df)),
+        random_state=42,
+    )
+
+    prec_m2b, ndcg_m2b = [], []
+
+    if logger:
+        logger.info(f"\n[Movie/Show → Books] Evaluating {len(movie_sample)} movies/shows…")
+
+    for movie_id, movie_row in tqdm(
+        movie_sample.iterrows(), total=len(movie_sample), desc="Movie→Book"
+    ):
+        try:
+            movie_title = str(movie_row["primaryTitle"])
+            recs = recommender.recommend_books_from_movie(
+                movie_title, k=k, use_projection=True
+            )
+            if len(recs) == 0:
+                continue
+
+            recommended_ids = recs["book_id"].tolist()
+
+            movie_genres = [g.strip() for g in str(movie_row.get("genres", "")).split(",")]
+            movie_genres_set = set(g for g in movie_genres if g)
+            if not movie_genres_set:
+                continue
+
+            # Relevant books: any mapped movie-genre overlaps with movie's genres
+            relevant_ids = set()
+            for bid, brow in recommender.book_df.iterrows():
+                book_mapped = set(get_mapped_movie_genres(brow, genre_mapping))
+                if book_mapped & movie_genres_set:
+                    relevant_ids.add(bid)
+
+            prec_m2b.append(precision_at_k(recommended_ids, relevant_ids, k))
+            ndcg_m2b.append(ndcg_at_k(recommended_ids, relevant_ids, k))
+
+        except Exception as e:
+            if logger:
+                logger.warning(
+                    f"  Skipping movie '{movie_row.get('primaryTitle', movie_id)}': {e}"
+                )
+
+    # ------------------------------------------------------------------ #
+    # Results                                                              #
+    # ------------------------------------------------------------------ #
+    results = {
+        "book_to_movie": {
+            f"precision_at_{k}": float(np.mean(prec_b2m)) if prec_b2m else 0.0,
+            f"ndcg_at_{k}": float(np.mean(ndcg_b2m)) if ndcg_b2m else 0.0,
+            "n_evaluated": len(prec_b2m),
+        },
+        "movie_to_book": {
+            f"precision_at_{k}": float(np.mean(prec_m2b)) if prec_m2b else 0.0,
+            f"ndcg_at_{k}": float(np.mean(ndcg_m2b)) if ndcg_m2b else 0.0,
+            "n_evaluated": len(prec_m2b),
+        },
+        "k": k,
+    }
+
+    # Print comparison table
+    header = f"\n{'Direction':<30}  {'Precision@'+str(k):<16}  {'nDCG@'+str(k):<12}"
+    sep = "-" * len(header)
+    b2m = results["book_to_movie"]
+    m2b = results["movie_to_book"]
+    table = (
+        f"\n{sep}"
+        f"{header}"
+        f"\n{sep}"
+        f"\n{'Book → Movies/Shows':<30}  "
+        f"{b2m[f'precision_at_{k}']:<16.4f}  "
+        f"{b2m[f'ndcg_at_{k}']:.4f}"
+        f"\n{'Movie/Show → Books':<30}  "
+        f"{m2b[f'precision_at_{k}']:<16.4f}  "
+        f"{m2b[f'ndcg_at_{k}']:.4f}"
+        f"\n{sep}"
+    )
+    print(table)
+    if logger:
+        logger.info(table)
+
+    # Save results
+    with open(BIDIRECTIONAL_EVAL_RESULTS, "w") as f:
+        json.dump(results, f, indent=2)
+    if logger:
+        logger.info(f"\n  ✓ Saved: {BIDIRECTIONAL_EVAL_RESULTS}")
+
+    return results
+
+
 def main():
     """Entry point"""
     logger = setup_logger("metrics_evaluation")
@@ -290,29 +466,42 @@ def main():
 
     # Import here to avoid circular dependency
     from models.baseline_recommender import BaselineRecommender
+    from models.contrastive_recommender import ContrastiveRecommender
 
-    # Load recommender
-    logger.info("\nInitializing baseline recommender...")
-    recommender = BaselineRecommender()
-    recommender.load_data()
+    # ---- Baseline evaluation (book → movie) ----
+    logger.info("\nInitializing baseline recommender…")
+    baseline = BaselineRecommender()
+    baseline.load_data()
 
-    # Evaluate
     results = evaluate_baseline(
-        recommender,
+        baseline,
         books_sample_size=200,
         k=10,
-        logger=logger
+        logger=logger,
     )
 
-    # Save results
     results_path = PROCESSED_DATA_DIR / "baseline_metrics.json"
-    with open(results_path, 'w') as f:
+    with open(results_path, "w") as f:
         json.dump(results, f, indent=2)
-    logger.info(f"\n  ✓ Saved results: {results_path}")
+    logger.info(f"\n  ✓ Saved: {results_path}")
 
-    # Plot results
     plot_path = PLOTS_DIR / "baseline_evaluation.png"
     plot_evaluation_results(results, plot_path, logger)
+
+    # ---- Bidirectional evaluation ----
+    logger.info("\nInitializing contrastive recommender for bidirectional eval…")
+    recommender = ContrastiveRecommender()
+    recommender.load_data()
+
+    try:
+        recommender.load_projection_head()
+        recommender.load_projected_index()
+        recommender.load_projected_book_index()
+    except Exception as e:
+        logger.warning(f"Contrastive model unavailable ({e}) — using baseline for both directions.")
+        recommender.load_book_baseline_index()
+
+    evaluate_bidirectional(recommender, sample_size=200, k=10, logger=logger)
 
     logger.info("\n" + "="*70)
     logger.info("✅ EVALUATION COMPLETE")
