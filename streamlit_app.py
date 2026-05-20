@@ -14,12 +14,26 @@ Cloud (Streamlit Cloud entry point):
 
 import sys
 import os
+import importlib
 from pathlib import Path
 
-# Set up paths before any project imports — must come first
-_root = Path(__file__).parent
-sys.path.insert(0, str(_root / "src"))   # from models.x / from utils.x
-sys.path.insert(0, str(_root))           # project root (project_config, etc.)
+# ---------------------------------------------------------------------------
+# Path setup — must happen before ANY project imports
+# Use abspath() to guarantee an absolute path regardless of how Streamlit
+# sets __file__ internally.
+# ---------------------------------------------------------------------------
+_root = Path(os.path.abspath(__file__)).parent
+_src = str(_root / "src")
+
+if _src not in sys.path:
+    sys.path.insert(0, _src)
+if str(_root) not in sys.path:
+    sys.path.insert(0, str(_root))
+
+# Clear Python's finder/importer cache so the newly added paths
+# are picked up immediately — required when sys.path is modified
+# inside an exec() context (Streamlit's script runner).
+importlib.invalidate_caches()
 
 import ast
 
@@ -28,8 +42,6 @@ import streamlit as st
 from dotenv import load_dotenv
 
 load_dotenv()
-
-from models.contrastive_recommender import ContrastiveRecommender
 
 # ---------------------------------------------------------------------------
 # Page config
@@ -90,6 +102,11 @@ def load_recommender():
     """
     # Cloud: download data from HuggingFace (no-op locally)
     _setup_cloud_data()
+
+    # Import here (not at module level) so that sys.path and
+    # importlib.invalidate_caches() have fully taken effect before
+    # this import is attempted.
+    from models.contrastive_recommender import ContrastiveRecommender
 
     recommender = ContrastiveRecommender()
     recommender.load_data()
