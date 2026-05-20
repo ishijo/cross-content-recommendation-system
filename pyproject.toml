@@ -1,5 +1,5 @@
 [build-system]
-requires = ["setuptools>=61"]
+requires = ["setuptools>=64"]
 build-backend = "setuptools.build_meta"
 
 [project]
@@ -7,15 +7,16 @@ name = "cross-content-recommender"
 version = "0.1.0"
 requires-python = ">=3.10"
 
-# src/ is the package root.
-# Installs: models, utils, evaluation, data (packages) + project_config (module)
-# so that `from models.x import ...` and `import project_config` work
-# without any sys.path manipulation.
+# src/ is the package root so that:
+#   from models.contrastive_recommender import ...
+#   from utils.hf_data_loader import ...
+#   import project_config
+# all work without any sys.path manipulation after `pip install -e .`
+[tool.setuptools]
+py-modules = ["project_config"]
+
 [tool.setuptools.package-dir]
 "" = "src"
 
 [tool.setuptools.packages.find]
 where = ["src"]
-
-[tool.setuptools]
-py-modules = ["project_config"]

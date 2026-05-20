@@ -1,6 +1,7 @@
-# Install the local project so src/ packages (models, utils, project_config, etc.)
-# are importable from anywhere without sys.path manipulation.
-.
+# Editable install of this repo — creates a .pth file in site-packages that adds
+# src/ to sys.path at interpreter startup, making models/utils/project_config
+# importable without any runtime sys.path manipulation.
+-e .
 
 # Cross-Content Recommender — Cloud Deployment Requirements
 # Python 3.11 · Linux x86_64 (Streamlit Cloud)
