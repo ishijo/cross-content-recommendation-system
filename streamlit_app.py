@@ -8,16 +8,13 @@ Deploy settings:
   Main file: streamlit_app.py
   Python: 3.11
 """
-import os
 import sys
+import os
 from pathlib import Path
 
-# Ensure src/ is on the path so all internal imports resolve
 _root = Path(__file__).parent
 sys.path.insert(0, str(_root / "src"))
+sys.path.insert(0, str(_root))
+os.chdir(_root)
 
-# Also expose the project root so relative paths in main.py work
-os.chdir(str(_root))
-
-# Run the app
 exec(open(_root / "app" / "main.py").read())
