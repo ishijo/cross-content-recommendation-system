@@ -1,0 +1,21 @@
+[build-system]
+requires = ["setuptools>=61"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "cross-content-recommender"
+version = "0.1.0"
+requires-python = ">=3.10"
+
+# src/ is the package root.
+# Installs: models, utils, evaluation, data (packages) + project_config (module)
+# so that `from models.x import ...` and `import project_config` work
+# without any sys.path manipulation.
+[tool.setuptools.package-dir]
+"" = "src"
+
+[tool.setuptools.packages.find]
+where = ["src"]
+
+[tool.setuptools]
+py-modules = ["project_config"]

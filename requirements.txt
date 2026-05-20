@@ -1,3 +1,7 @@
+# Install the local project so src/ packages (models, utils, project_config, etc.)
+# are importable from anywhere without sys.path manipulation.
+.
+
 # Cross-Content Recommender — Cloud Deployment Requirements
 # Python 3.11 · Linux x86_64 (Streamlit Cloud)
 #
