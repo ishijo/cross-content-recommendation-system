@@ -6,7 +6,9 @@ data/embeddings/
 !data/processed/genre_mapping_summary.csv
 
 # Model files (models downloaded via library, not stored in repo)
-models/
+# /models/ is root-only — src/models/*.py (source code) must remain tracked
+/models/
+src/model/
 *.bin
 *.pt
 *.pth
