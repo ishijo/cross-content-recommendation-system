@@ -18,21 +18,15 @@ import importlib
 from pathlib import Path
 
 # ---------------------------------------------------------------------------
-# Path setup — must happen before ANY project imports
-# Use abspath() to guarantee an absolute path regardless of how Streamlit
-# sets __file__ internally.
+# Path setup — must happen before ANY project imports.
+# Re-applied here AND inside each @st.cache_resource function because
+# Streamlit Cloud can lose module-level sys.path changes in cached scopes.
 # ---------------------------------------------------------------------------
-_root = Path(os.path.abspath(__file__)).parent
-_src = str(_root / "src")
+_root = Path(__file__).parent
+for _p in [str(_root), str(_root / "src")]:
+    if _p not in sys.path:
+        sys.path.insert(0, _p)
 
-if _src not in sys.path:
-    sys.path.insert(0, _src)
-if str(_root) not in sys.path:
-    sys.path.insert(0, str(_root))
-
-# Clear Python's finder/importer cache so the newly added paths
-# are picked up immediately — required when sys.path is modified
-# inside an exec() context (Streamlit's script runner).
 importlib.invalidate_caches()
 
 import ast
@@ -100,12 +94,20 @@ def load_recommender():
     Returns:
         (recommender, has_projection: bool)
     """
+    # Re-apply sys.path inside the cached function scope — Streamlit Cloud
+    # does not guarantee that module-level sys.path mutations persist here.
+    import sys
+    import importlib
+    from pathlib import Path
+    _root = Path(__file__).parent
+    for _p in [str(_root), str(_root / "src")]:
+        if _p not in sys.path:
+            sys.path.insert(0, _p)
+    importlib.invalidate_caches()
+
     # Cloud: download data from HuggingFace (no-op locally)
     _setup_cloud_data()
 
-    # Import here (not at module level) so that sys.path and
-    # importlib.invalidate_caches() have fully taken effect before
-    # this import is attempted.
     from models.contrastive_recommender import ContrastiveRecommender
 
     recommender = ContrastiveRecommender()
