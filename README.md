@@ -1,205 +1,194 @@
 # Cross-Content Recommendation System
 
-A recommendation system that matches books to movies using sentence embeddings and contrastive learning. Given a book you loved, find compatible movies to watch!
+Bidirectional recommender that matches books to movies/shows and movies/shows to books — using contrastive learning, SBERT embeddings, and LLM-augmented genre mapping.
 
-## 🎯 Project Overview
-
-- **Input:** 10,000 books from Goodreads (461 unique genres)
-- **Target:** 10,000 movies from IMDB (~25 genres)
-- **Approach:** Semantic similarity using SBERT embeddings + contrastive projection head trained on genre-overlap supervision
-- **Goal:** Cross-domain recommendations with genre alignment
-
-## 📁 Project Structure
-
-```
-cross-content-recommendation-system/
-├── data/
-│   ├── raw/              # Original datasets (Kaggle downloads)
-│   ├── processed/        # Cleaned dataframes, genre mappings
-│   └── embeddings/       # Generated embeddings and FAISS index
-├── notebooks/
-│   └── archive/          # Historical analysis notebooks
-├── src/
-│   ├── data/             # Data processing scripts
-│   ├── models/           # ML model code
-│   ├── evaluation/       # Metrics and evaluation
-│   └── utils/            # Shared utilities
-├── app/                  # Streamlit web application
-├── plots/                # EDA and evaluation visualizations
-├── models/               # Saved model weights
-└── tests/                # Unit tests
-```
-
-## 🚀 Quick Start
-
-### 1. Environment Setup
-
-```bash
-# Clone the repository
-git clone <repo-url>
-cd cross-content-recommendation-system
-
-# Create virtual environment
-python -m venv venv
-source venv/bin/activate  # On Windows: venv\Scripts\activate
-
-# Install dependencies
-pip install -r requirements.txt
-
-# Download spaCy model (for genre similarity)
-python -m spacy download en_core_web_lg
-
-# Download NLTK data
-python -c "import nltk; nltk.download('stopwords'); nltk.download('punkt'); nltk.download('wordnet')"
-```
-
-### 2. Configure API Keys
-
-```bash
-# Copy environment template
-cp .env.example .env
-
-# Edit .env and add your Anthropic API key
-# ANTHROPIC_API_KEY=your_key_here
-```
-
-### 3. Download Data
-
-The datasets are automatically downloaded from Kaggle on first run, or you can download manually:
-
-**Kaggle API Setup (one-time):**
-1. Get API token from [kaggle.com/account](https://www.kaggle.com/account)
-2. Place `kaggle.json` in `~/.kaggle/`
-3. Run: `chmod 600 ~/.kaggle/kaggle.json`
-
-**Manual Download:**
-```bash
-python download_data.py
-```
-
-**Data Sources:**
-- [IMDB Data](https://www.kaggle.com/datasets/ishikajohari/imdb-data-with-descriptions)
-- [Goodreads Data](https://www.kaggle.com/datasets/ishikajohari/best-books-10k-multi-genre-data)
-
-### 4. Run Data Pipeline
-
-**Step 1: Genre Mapping (uses Claude API)**
-```bash
-python src/data/genre_mapper.py
-```
-This maps 461 book genres to ~25 movie genres using Claude API with retry logic and progress tracking.
-
-**Step 2: Data Validation**
-```bash
-python src/data/data_validation.py
-```
-Validates data quality, generates EDA plots, and provides GO/NO-GO verdict.
-
-### 5. Run Application
-
-```bash
-# Local data mode
-streamlit run app/main.py
-
-# S3 cloud storage mode
-streamlit run app/main_s3.py
-```
-
-## 📊 Data Pipeline
-
-1. **Raw Data** (`data/raw/`)
-   - Goodreads: 10k books with descriptions, 461 genres
-   - IMDB: 10k movies with descriptions, ~25 genres
-
-2. **Genre Mapping** (`src/data/genre_mapper.py`)
-   - Uses Claude API to map book genres → movie genres
-   - Outputs: `genre_mapping.json`, `genre_mapping_summary.csv`
-
-3. **Validation** (`src/data/data_validation.py`)
-   - Checks for nulls in critical columns
-   - Verifies ≥80% genre mapping coverage
-   - Generates EDA plots in `plots/`
-
-4. **Preprocessing** (notebooks)
-   - Clean text, handle missing values
-   - Create pickle files for quick loading
-
-## 🔬 Machine Learning Pipeline
-
-### Current Status: Sprint 1 Complete ✅
-
-**Sprint 1 - Data Foundation**
-- ✅ Repository restructuring
-- ✅ Genre mapping with Claude API
-- ✅ Data validation and EDA
-- ✅ Fixed broken notebook paths
-
-**Sprint 2 - Embedding Generation** (Next)
-- Generate SBERT embeddings for all books/movies
-- Create FAISS index for fast similarity search
-- Implement baseline content-based recommendations
-
-**Sprint 3 - Contrastive Learning** (Future)
-- Train projection head on genre-overlap pairs
-- Fine-tune for cross-domain alignment
-- Evaluate with precision@K, NDCG metrics
-
-**Sprint 4 - Production Deployment** (Future)
-- Optimize inference pipeline
-- Build interactive Streamlit UI
-- Deploy to cloud (Streamlit Cloud / AWS)
-
-## 🧪 Running Notebooks
-
-All notebooks have been moved to `notebooks/archive/` with fixed paths:
-
-```bash
-cd notebooks
-jupyter notebook archive/preprocessing.ipynb
-```
-
-**Available notebooks:**
-- `preprocessing.ipynb` - Data cleaning
-- `descriptions.ipynb` - Description similarity experiments
-- `genres.ipynb` - Genre analysis and visualization
-- `genreSimilarity.ipynb` - Genre similarity using spaCy
-- `getDescription.ipynb` - Web scraping (historical)
-
-## 🔧 Configuration
-
-All paths are centralized in `src/config.py`. No hardcoded paths in scripts!
-
-## 📈 Evaluation
-
-Metrics tracked:
-- Precision@K, Recall@K
-- NDCG (Normalized Discounted Cumulative Gain)
-- Genre alignment accuracy
-- Cross-domain coverage
-
-## 🤝 Contributing
-
-1. Fork the repository
-2. Create feature branch (`git checkout -b feature/amazing-feature`)
-3. Commit changes (`git commit -m 'Add amazing feature'`)
-4. Push to branch (`git push origin feature/amazing-feature`)
-5. Open Pull Request
-
-## 📝 License
-
-This project is for educational and research purposes.
-
-## 🔗 Links
-
-- [GitHub Repository](https://github.com/ishijo/cross-content-recommendation-system)
-- [IMDB Dataset](https://www.kaggle.com/datasets/ishikajohari/imdb-data-with-descriptions)
-- [Goodreads Dataset](https://www.kaggle.com/datasets/ishikajohari/best-books-10k-multi-genre-data)
-- [Sentence Transformers](https://www.sbert.net/)
-
-## 📧 Contact
-
-For questions or feedback, please open an issue on GitHub.
+[![Live Demo](https://img.shields.io/badge/Live%20Demo-Streamlit-FF4B4B?logo=streamlit&logoColor=white)](https://cross-content-recommendation-system.streamlit.app/)
+[![Python](https://img.shields.io/badge/Python-3.11-3776AB?logo=python&logoColor=white)](https://www.python.org/)
+[![License](https://img.shields.io/badge/License-Apache%202.0-blue.svg)](LICENSE)
+[![HuggingFace Dataset](https://img.shields.io/badge/HuggingFace-Dataset-FFD21E?logo=huggingface&logoColor=black)](https://huggingface.co/datasets/ishijo/cross-content-recommender-data)
 
 ---
 
-**Built with:** Python, Sentence Transformers, Streamlit, Claude API, FAISS
+## What It Does
+
+Given a book, the system recommends compatible movies and shows. Given a movie or show, it recommends compatible books. Recommendations are powered by semantic similarity over plot descriptions and genres, refined with a contrastive projection head, and surfaced with a two-sentence natural language explanation generated by the Claude API.
+
+**[Try the live demo](https://cross-content-recommendation-system.streamlit.app/)**
+
+---
+
+## System Architecture
+
+```
+┌─────────────────────────────────────────────────────────────────────┐
+│                        Data Collection                              │
+│   Self-scraped: 10,000 Goodreads books + 7,850 IMDB titles         │
+└───────────────────────────┬─────────────────────────────────────────┘
+                            │
+                            ▼
+┌─────────────────────────────────────────────────────────────────────┐
+│                      LLM Genre Mapping                              │
+│   Claude API: 461 book genre tags → 25 IMDB genres (87.4% coverage)│
+└───────────────────────────┬─────────────────────────────────────────┘
+                            │
+                            ▼
+┌─────────────────────────────────────────────────────────────────────┐
+│                   Sentence Embeddings (SBERT)                       │
+│   all-mpnet-base-v2: [GENRES] + [DESCRIPTION] → 768-dim vectors    │
+│   L2-normalized, both domains in shared embedding space            │
+└───────────────────────────┬─────────────────────────────────────────┘
+                            │
+                            ▼
+┌─────────────────────────────────────────────────────────────────────┐
+│                    FAISS Retrieval Index                            │
+│   IndexFlatIP for approximate nearest-neighbor search              │
+│   Also used for hard negative mining during training               │
+└───────────────────────────┬─────────────────────────────────────────┘
+                            │
+                            ▼
+┌─────────────────────────────────────────────────────────────────────┐
+│                   Contrastive Training                              │
+│   PyTorch MLP: 768 → 512 → 256 → 128 dim                          │
+│   InfoNCE loss, τ=0.07, in-batch + hard negatives                  │
+│   50 epochs, CosineAnnealingLR, early stopping                     │
+└───────────────────────────┬─────────────────────────────────────────┘
+                            │
+                            ▼
+┌─────────────────────────────────────────────────────────────────────┐
+│                  Bidirectional Inference                            │
+│   Book → Movies/Shows  |  Movie/Show → Books                       │
+│   Claude API generates 2-sentence explanation per recommendation   │
+└───────────────────────────┬─────────────────────────────────────────┘
+                            │
+                            ▼
+┌─────────────────────────────────────────────────────────────────────┐
+│                      Streamlit UI                                   │
+│   Deployed on Streamlit Cloud, data hosted on HuggingFace Hub      │
+└─────────────────────────────────────────────────────────────────────┘
+```
+
+---
+
+## Quickstart
+
+```bash
+git clone https://github.com/ishijo/cross-content-recommendation-system
+cd cross-content-recommendation-system
+python3 -m venv venv && source venv/bin/activate
+pip install -r requirements.txt
+streamlit run streamlit_app.py
+```
+
+> **Apple Silicon:** prefix commands with `arch -arm64` (e.g. `arch -arm64 streamlit run streamlit_app.py`).
+
+The first run downloads ~82 MB of data from HuggingFace Hub (60–90 seconds). Subsequent runs use the cached data.
+
+**Optional:** Add `ANTHROPIC_API_KEY=your_key` to a `.env` file to enable natural language explanations. The app works without it.
+
+---
+
+## Evaluation
+
+Evaluated on 200-book and 200-movie random samples (seed=42). Genre overlap is used as a retrieval proxy — not human-annotated ground truth.
+
+| Direction                | Precision@10 | nDCG@10 |
+|--------------------------|:------------:|:-------:|
+| Book → Movies/Shows      | 0.9954       | 0.9963  |
+| Movie/Show → Books       | 0.9036       | 0.9242  |
+
+The Book→Media direction benefits from the LLM genre mapping being calibrated in that direction. The Media→Books gap reflects description length asymmetry: books average 956 characters vs. movies at 317 characters.
+
+---
+
+## Project Structure
+
+```
+.
+├── streamlit_app.py          # Main Streamlit entrypoint
+├── requirements.txt
+├── pyproject.toml
+├── app/
+│   ├── main.py               # App logic (local storage)
+│   ├── main_s3.py            # App logic (S3 storage)
+│   ├── upload_to_hf.py       # HuggingFace Hub uploader
+│   └── assets/               # Static assets
+├── src/
+│   ├── config/               # Configuration
+│   ├── data/                 # Data loading and preprocessing
+│   ├── models/               # ContrastiveRecommender, projection head
+│   ├── evaluation/           # Precision@K, nDCG metrics
+│   └── utils/                # Shared utilities
+├── scripts/
+│   └── upload_to_hf.py       # Re-upload data to HuggingFace Hub
+├── notebooks/                # Preprocessing and analysis notebooks
+├── models/                   # Saved model checkpoints
+├── data/                     # Local data cache (gitignored)
+├── reports/                  # Evaluation reports
+└── plots/                    # Generated figures
+```
+
+---
+
+## Data
+
+Both datasets are self-scraped — not sourced from pre-packaged datasets.
+
+| Dataset   | Items  | Genre tags         | Coverage   |
+|-----------|-------:|-------------------:|------------|
+| Goodreads | 10,000 | 461 unique tags    | up to 2022 |
+| IMDB      | 7,850  | 25 standard genres | up to 2022 |
+
+The 461 Goodreads genre tags were mapped to 25 IMDB genre categories using the Claude API, achieving **87.4% genre coverage**. This mapping provides the weak supervision signal used to construct positive pairs for contrastive training.
+
+Data is hosted on HuggingFace Hub: [ishijo/cross-content-recommender-data](https://huggingface.co/datasets/ishijo/cross-content-recommender-data)
+
+### Re-uploading data
+
+```bash
+# Add HF_TOKEN to .env, then:
+python scripts/upload_to_hf.py
+```
+
+---
+
+## How It Was Built
+
+**Sprint 1 — Data + Genre Mapping**
+Self-scraped both datasets. Used Claude API to map 461 Goodreads genre tags to 25 IMDB genres, producing a cross-domain genre alignment with 87.4% coverage. Genre-aligned pairs form the weak positive signal for training.
+
+**Sprint 2 — Embeddings + Baseline**
+Each item is encoded as `[GENRES] + [DESCRIPTION]` and passed through `all-mpnet-base-v2` (SBERT) to produce a 768-dimensional L2-normalized vector. FAISS `IndexFlatIP` provides fast inner-product retrieval. Baseline Precision@10 reached 99.8% — inflated by broad genre proxy labels.
+
+**Sprint 3 — Contrastive Learning**
+A shared MLP projection head (768→512→256→128) is trained with InfoNCE loss (τ=0.07). Positive pairs are genre-aligned cross-domain items. Hard negatives are mined with FAISS. Training uses Adam + CosineAnnealingLR for 50 epochs with early stopping. A single encoder is shared across both domains.
+
+**Sprint 4 — Bidirectional Deployment**
+Full bidirectional inference: Book→Media and Media→Books. Claude API generates a concise natural language explanation for each recommendation. Data hosted on HuggingFace Hub; app deployed on Streamlit Cloud.
+
+---
+
+## Tech Stack
+
+| Category        | Tools                                              |
+|-----------------|----------------------------------------------------|
+| ML / Embeddings | PyTorch, sentence-transformers, FAISS              |
+| LLM             | Anthropic Claude API                               |
+| Data            | pandas, numpy, scikit-learn                        |
+| Frontend        | Streamlit                                          |
+| Hosting         | Streamlit Cloud, HuggingFace Hub                   |
+| Base model      | `all-mpnet-base-v2` (HuggingFace Transformers)     |
+
+---
+
+## Known Limitations
+
+- **Genre proxy is not ground truth.** Evaluation uses genre overlap as a retrieval signal. Metrics measure genre alignment, not human-judged thematic compatibility.
+- **Coverage ends at 2022.** Neither dataset includes titles released after 2022.
+- **Description length asymmetry.** Book descriptions average 956 characters; movie plot summaries average 317 characters. This creates an embedding imbalance that affects cross-domain similarity scores.
+- **Tonal mismatches.** Qualitative inspection shows occasional recommendations that are genre-compatible but tonally off — a dark literary novel paired with a light action film, for example.
+
+---
+
+## Author
+
+**Ishika Johari** — [github.com/ishijo](https://github.com/ishijo)
